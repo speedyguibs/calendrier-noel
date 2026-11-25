@@ -1,0 +1,226 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notre Noël à distance</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: radial-gradient(ellipse at top, #263d60, #101b30 70%);
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 650px;
+            margin: auto;
+            padding: 45px 20px;
+        }
+
+        .subtitle {
+            color: #e9c88b;
+            letter-spacing: 5px;
+            font-size: 12px;
+        }
+
+        h1 {
+            font-family: Georgia, serif;
+            color: #f5d69e;
+            font-size: 38px;
+            margin: 20px 0;
+        }
+
+        .description {
+            color: #dce2ef;
+            line-height: 1.7;
+            font-size: 15px;
+        }
+
+        .progression {
+            background: #1d2b43;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 30px 0;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .progress-bar {
+            background: #39445b;
+            height: 8px;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: #e5c184;
+            width: 0%;
+            height: 100%;
+            border-radius: 20px;
+        }
+
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+        }
+
+        .day {
+            aspect-ratio: 1;
+            border: 1px solid #384960;
+            border-radius: 14px;
+            background: #21304a;
+            color: #e9d7b6;
+            font-size: 23px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            transition: 0.2s;
+        }
+
+        .day:hover {
+            transform: translateY(-3px);
+            border-color: #f5d69e;
+        }
+
+        .day.available {
+            background: #e5c184;
+            color: #49361f;
+        }
+
+        .day.christmas {
+            background: #853a4e;
+            border-color: #d19b94;
+        }
+
+        .symbol {
+            font-size: 16px;
+        }
+
+        footer {
+            margin-top: 40px;
+            color: #adb8cc;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .heart {
+            font-size: 28px;
+            color: #e294a3;
+        }
+
+        @media (max-width: 450px) {
+            h1 {
+                font-size: 29px;
+            }
+
+            .calendar {
+                gap: 7px;
+            }
+
+            .day {
+                font-size: 20px;
+                border-radius: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <main class="container">
+
+        <div class="subtitle">✦ NOËL 2026 ✦</div>
+
+        <h1>Notre Noël à distance</h1>
+
+        <p class="description">
+            25 jours, 25 missions, des milliers de kilomètres,
+            mais toujours ensemble.
+        </p>
+
+        <div class="progression">
+            <div class="progress-info">
+                <span>Ta progression</span>
+                <span>0 / 25</span>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+
+        <div class="calendar" id="calendar"></div>
+
+        <footer>
+            <div class="heart">♥</div>
+            Créé avec amour,<br>
+            depuis l'autre bout du monde.
+        </footer>
+
+    </main>
+
+    <script>
+        const calendar = document.getElementById("calendar");
+
+        for (let day = 1; day <= 25; day++) {
+
+            const button = document.createElement("button");
+
+            button.className = "day";
+
+            if (day === 1) {
+                button.classList.add("available");
+            }
+
+            if (day === 25) {
+                button.classList.add("christmas");
+            }
+
+            let symbol = "🔒";
+
+            if (day === 1) {
+                symbol = "▶";
+            }
+
+            if (day === 25) {
+                symbol = "🎁";
+            }
+
+            button.innerHTML =
+                day + '<span class="symbol">' + symbol + '</span>';
+
+            button.addEventListener("click", function () {
+
+                if (day === 1) {
+                    alert("Bienvenue dans notre aventure ! Ta première mission arrive bientôt. ❤️");
+                } else {
+                    alert("Patience... Cette mission est encore verrouillée !");
+                }
+
+            });
+
+            calendar.appendChild(button);
+        }
+    </script>
+
+</body>
+</html>
