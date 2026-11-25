@@ -1,226 +1,1819 @@
 
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notre Noël à distance</title>
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        body {
-            margin: 0;
-            min-height: 100vh;
-            background: radial-gradient(ellipse at top, #263d60, #101b30 70%);
-            color: white;
-            font-family: Arial, sans-serif;
-            text-align: center;
-        }
+<title>Notre aventure de Noël</title>
 
-        .container {
-            max-width: 650px;
-            margin: auto;
-            padding: 45px 20px;
-        }
+<style>
 
-        .subtitle {
-            color: #e9c88b;
-            letter-spacing: 5px;
-            font-size: 12px;
-        }
+/* =========================
+   COULEURS ET STYLE GENERAL
+========================= */
 
-        h1 {
-            font-family: Georgia, serif;
-            color: #f5d69e;
-            font-size: 38px;
-            margin: 20px 0;
-        }
+:root {
+    --red: #a51e32;
+    --dark-red: #65101f;
+    --gold: #d4ac63;
+    --light-gold: #f4dda5;
+    --cream: #fffaf1;
+    --champagne: #efe0cb;
+    --text: #751c2a;
+    --muted: #89685c;
+}
 
-        .description {
-            color: #dce2ef;
-            line-height: 1.7;
-            font-size: 15px;
-        }
+* {
+    box-sizing: border-box;
+}
 
-        .progression {
-            background: #1d2b43;
-            border-radius: 15px;
-            padding: 20px;
-            margin: 30px 0;
-        }
+body {
+    margin: 0;
+    min-height: 100vh;
+    color: var(--cream);
+    font-family: Georgia, "Times New Roman", serif;
 
-        .progress-info {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            font-size: 14px;
-        }
+    background:
+        radial-gradient(
+            ellipse at top,
+            #d0525b 0%,
+            transparent 55%
+        ),
+        linear-gradient(
+            180deg,
+            #a51e32,
+            #65101f
+        );
 
-        .progress-bar {
-            background: #39445b;
-            height: 8px;
-            border-radius: 20px;
-            overflow: hidden;
-        }
+    background-attachment: fixed;
+}
 
-        .progress-fill {
-            background: #e5c184;
-            width: 0%;
-            height: 100%;
-            border-radius: 20px;
-        }
+button, input {
+    font: inherit;
+}
 
-        .calendar {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 10px;
-        }
+button {
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
 
-        .day {
-            aspect-ratio: 1;
-            border: 1px solid #384960;
-            border-radius: 14px;
-            background: #21304a;
-            color: #e9d7b6;
-            font-size: 23px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 7px;
-            transition: 0.2s;
-        }
+.container {
+    max-width: 720px;
+    margin: auto;
+    padding: 20px 18px 110px;
+    position: relative;
+    z-index: 2;
+}
 
-        .day:hover {
-            transform: translateY(-3px);
-            border-color: #f5d69e;
-        }
 
-        .day.available {
-            background: #e5c184;
-            color: #49361f;
-        }
+/* =========================
+   NEIGE ANIMEE
+========================= */
 
-        .day.christmas {
-            background: #853a4e;
-            border-color: #d19b94;
-        }
+.snow {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 1;
+}
 
-        .symbol {
-            font-size: 16px;
-        }
+.snowflake {
+    position: absolute;
+    top: -30px;
+    color: white;
+    opacity: 0.7;
+    animation-name: fall;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+}
 
-        footer {
-            margin-top: 40px;
-            color: #adb8cc;
-            font-size: 13px;
-            line-height: 1.7;
-        }
+@keyframes fall {
+    from {
+        transform: translateY(-40px) rotate(0deg);
+    }
 
-        .heart {
-            font-size: 28px;
-            color: #e294a3;
-        }
+    to {
+        transform: translateY(110vh) rotate(360deg);
+    }
+}
 
-        @media (max-width: 450px) {
-            h1 {
-                font-size: 29px;
-            }
 
-            .calendar {
-                gap: 7px;
-            }
+/* =========================
+   GUIRLANDE LUMINEUSE
+========================= */
 
-            .day {
-                font-size: 20px;
-                border-radius: 10px;
-            }
-        }
-    </style>
+.garland {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    height: 38px;
+    border-top: 2px solid #d4ac6388;
+    border-radius: 0 0 50% 50%;
+    margin-bottom: 18px;
+}
+
+.bulb {
+    width: 8px;
+    height: 12px;
+    border-radius: 50%;
+    background: #ffe2a1;
+    box-shadow:
+        0 0 8px #ffda87,
+        0 0 18px #ffda87;
+
+    animation: glow 2.5s infinite alternate;
+}
+
+.bulb:nth-child(2n) {
+    animation-delay: 0.8s;
+}
+
+.bulb:nth-child(3n) {
+    animation-delay: 1.5s;
+}
+
+@keyframes glow {
+    from {
+        opacity: 0.4;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+
+/* =========================
+   BARRE SUPERIEURE
+========================= */
+
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    color: var(--light-gold);
+    font-size: 11px;
+    letter-spacing: 2px;
+}
+
+.key-counter {
+    background: #65101f88;
+    border: 1px solid var(--gold);
+    padding: 10px 15px;
+    border-radius: 30px;
+    letter-spacing: 0;
+    white-space: nowrap;
+}
+
+
+/* =========================
+   PAGE D'ACCUEIL
+========================= */
+
+.hero {
+    text-align: center;
+    padding: 28px 5px 35px;
+}
+
+.chapter {
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--light-gold);
+}
+
+h1 {
+    font-size: clamp(35px, 8vw, 58px);
+    font-weight: normal;
+    line-height: 1.1;
+    margin: 20px 0;
+    color: var(--cream);
+    text-shadow: 0 4px 15px #39081055;
+}
+
+.hero p {
+    color: #f2dbcf;
+    line-height: 1.8;
+    font-size: 15px;
+}
+
+.hero-treasure {
+    width: 190px;
+    margin: 25px auto;
+    filter: drop-shadow(0 0 25px #f5d18b55);
+    animation: float 4s ease-in-out infinite;
+}
+
+@keyframes float {
+    50% {
+        transform: translateY(-7px);
+    }
+}
+
+.decoration {
+    color: var(--light-gold);
+    letter-spacing: 12px;
+    margin: 15px 0;
+}
+
+
+/* =========================
+   PROGRESSION
+========================= */
+
+.panel {
+    background: var(--cream);
+    color: var(--text);
+    border: 1px solid var(--gold);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 10px 30px #350a1933;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--text);
+}
+
+.progress-bar {
+    height: 8px;
+    background: #ead9c2;
+    border-radius: 30px;
+    overflow: hidden;
+    margin-top: 15px;
+}
+
+.progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(
+        90deg,
+        #a51e32,
+        #d4ac63
+    );
+    border-radius: 30px;
+    transition: width 0.5s;
+}
+
+.section-title {
+    text-align: center;
+    color: var(--light-gold);
+    font-size: 13px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin: 35px 0 18px;
+}
+
+
+/* =========================
+   CALENDRIER DES 25 COFFRES
+========================= */
+
+.calendar {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+
+    background: var(--cream);
+    padding: 14px;
+    border-radius: 18px;
+    border: 1px solid var(--gold);
+    box-shadow: 0 10px 30px #350a1944;
+}
+
+.day {
+    min-width: 0;
+    aspect-ratio: 0.82;
+
+    background: linear-gradient(
+        145deg,
+        #fffaf1,
+        #edddc6
+    );
+
+    border: 1px solid #dbc2a0;
+    border-radius: 12px;
+    color: var(--text);
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 5px;
+    padding: 7px 3px;
+
+    box-shadow: 0 3px 7px #805b3220;
+
+    transition:
+        transform 0.2s,
+        border-color 0.2s,
+        box-shadow 0.2s;
+}
+
+.day:hover {
+    transform: translateY(-4px);
+    border-color: var(--gold);
+    box-shadow: 0 5px 15px #a51e3230;
+}
+
+.day-number {
+    font-size: 22px;
+    color: var(--text);
+}
+
+.chest {
+    width: 82%;
+    max-width: 75px;
+}
+
+.day-status {
+    font-size: 11px;
+    color: #9a7949;
+}
+
+.day.locked .chest {
+    opacity: 0.85;
+}
+
+.day.available {
+    background: linear-gradient(
+        145deg,
+        #fff3d3,
+        #e8c881
+    );
+
+    border: 2px solid #bc9046;
+    box-shadow: 0 0 18px #d4ac6360;
+
+    animation: available-glow 3s infinite;
+}
+
+@keyframes available-glow {
+    50% {
+        box-shadow: 0 0 16px #d4ac63aa;
+    }
+}
+
+.day.completed {
+    background: linear-gradient(
+        145deg,
+        #fff3d3,
+        #f0d9a5
+    );
+
+    border-color: #b68c49;
+}
+
+.day.completed .day-status {
+    color: #52734b;
+    font-weight: bold;
+}
+
+.day.final {
+    background: linear-gradient(
+        145deg,
+        #b3313f,
+        #751c2a
+    );
+
+    border: 2px solid var(--gold);
+}
+
+.day.final .day-number,
+.day.final .day-status {
+    color: #fff0ce;
+}
+
+.footer-text {
+    text-align: center;
+    color: #efd5c7;
+    font-style: italic;
+    font-size: 13px;
+    line-height: 1.7;
+    margin: 35px 0;
+}
+
+
+/* =========================
+   MENU DE NAVIGATION
+========================= */
+
+.navigation {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    background: var(--cream);
+    border-top: 2px solid var(--gold);
+    box-shadow: 0 -5px 20px #350a1933;
+
+    padding: 14px 10px;
+    padding-bottom: calc(
+        14px + env(safe-area-inset-bottom)
+    );
+
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    z-index: 10;
+}
+
+.nav-button {
+    color: #a7836d;
+    border: none;
+    background: transparent;
+    width: 115px;
+    padding: 5px;
+    font-size: 12px;
+}
+
+.nav-button span {
+    display: block;
+    font-size: 23px;
+    margin-bottom: 5px;
+}
+
+.nav-button.active {
+    color: var(--red);
+    font-weight: bold;
+}
+
+.screen {
+    display: none;
+}
+
+.screen.active {
+    display: block;
+}
+
+
+/* =========================
+   INVENTAIRE
+========================= */
+
+.collection {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.collectible {
+    background: #f5e8d7;
+    border: 1px solid #d8bf9c;
+    border-radius: 10px;
+    padding: 16px 5px;
+    text-align: center;
+    color: var(--text);
+}
+
+.collectible.earned {
+    background: #f2dfb5;
+    border-color: #b68c49;
+}
+
+.collectible span {
+    display: block;
+    font-size: 27px;
+    margin-bottom: 8px;
+}
+
+.collectible small {
+    color: var(--muted);
+}
+
+
+/* =========================
+   RECOMPENSES
+========================= */
+
+.reward {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 18px 0;
+    border-bottom: 1px solid #ead9c2;
+}
+
+.reward:last-child {
+    border-bottom: none;
+}
+
+.reward-icon {
+    font-size: 30px;
+}
+
+.reward-title {
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+.reward small {
+    color: var(--muted);
+}
+
+.reward.locked {
+    opacity: 0.6;
+}
+
+
+/* =========================
+   FENETRES DES MINI-JEUX
+========================= */
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: #350812bb;
+    backdrop-filter: blur(6px);
+
+    display: none;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+    z-index: 20;
+}
+
+.overlay.visible {
+    display: flex;
+}
+
+.modal {
+    position: relative;
+    background: var(--cream);
+    color: var(--text);
+
+    border: 2px solid var(--gold);
+    border-radius: 20px;
+    padding: 35px 24px;
+
+    max-width: 450px;
+    max-height: 85vh;
+    overflow-y: auto;
+    width: 100%;
+
+    text-align: center;
+
+    box-shadow: 0 15px 70px #0006;
+    animation: appear 0.25s ease-out;
+}
+
+@keyframes appear {
+    from {
+        opacity: 0;
+        transform: scale(0.92);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.modal .chapter {
+    color: #a78343;
+}
+
+.modal h2 {
+    font-weight: normal;
+    font-size: 30px;
+    color: var(--text);
+}
+
+.modal p {
+    color: #79534b;
+    line-height: 1.7;
+}
+
+.close {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 27px;
+}
+
+.gold-button {
+    display: block;
+    width: 100%;
+    padding: 15px;
+    margin-top: 16px;
+
+    background: linear-gradient(
+        135deg,
+        #ad2938,
+        #751c2a
+    );
+
+    color: var(--cream);
+    border: 1px solid var(--gold);
+    border-radius: 10px;
+    font-weight: bold;
+}
+
+.gold-button:hover {
+    filter: brightness(1.1);
+}
+
+.answer {
+    width: 100%;
+    padding: 15px;
+
+    background: #f5e8d7;
+    color: var(--text);
+    border: 1px solid var(--gold);
+    border-radius: 8px;
+
+    text-align: center;
+    font-size: 20px;
+    letter-spacing: 5px;
+}
+
+.feedback {
+    min-height: 20px;
+    color: var(--red);
+    margin-top: 14px;
+}
+
+.test-banner {
+    text-align: center;
+    background: #fff0ce;
+    color: var(--text);
+    border: 1px solid var(--gold);
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    margin-top: 15px;
+}
+
+
+/* =========================
+   ADAPTATION AU TELEPHONE
+========================= */
+
+@media (max-width: 400px) {
+
+    .container {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .calendar {
+        padding: 9px;
+        gap: 6px;
+    }
+
+    .day {
+        border-radius: 8px;
+    }
+
+    .day-number {
+        font-size: 17px;
+    }
+
+    .day-status {
+        font-size: 9px;
+    }
+
+    .topbar {
+        font-size: 9px;
+    }
+
+    .hero-treasure {
+        width: 155px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    .snow {
+        display: none;
+    }
+}
+
+</style>
+
 </head>
 
 <body>
 
-    <main class="container">
 
-        <div class="subtitle">✦ NOËL 2026 ✦</div>
+<!-- NEIGE -->
 
-        <h1>Notre Noël à distance</h1>
+<div class="snow" id="snow" aria-hidden="true"></div>
 
-        <p class="description">
-            25 jours, 25 missions, des milliers de kilomètres,
-            mais toujours ensemble.
-        </p>
 
-        <div class="progression">
+<!-- CONTENU PRINCIPAL -->
+
+<main class="container">
+
+    <!-- GUIRLANDE -->
+
+    <div class="garland" aria-hidden="true">
+
+        <span class="bulb"></span>
+        <span class="bulb"></span>
+        <span class="bulb"></span>
+        <span class="bulb"></span>
+        <span class="bulb"></span>
+        <span class="bulb"></span>
+        <span class="bulb"></span>
+        <span class="bulb"></span>
+        <span class="bulb"></span>
+        <span class="bulb"></span>
+        <span class="bulb"></span>
+        <span class="bulb"></span>
+
+    </div>
+
+
+    <!-- BARRE SUPERIEURE -->
+
+    <div class="topbar">
+
+        <span>✦ NOËL 2026 ✦</span>
+
+        <span class="key-counter">
+            🔑 <span id="keyCount">0</span> / 24
+        </span>
+
+    </div>
+
+    <div id="testBanner"></div>
+
+
+    <!-- PAGE AVENTURE -->
+
+    <section class="screen active" id="adventure">
+
+        <header class="hero">
+
+            <div class="chapter">
+                Une aventure de décembre
+            </div>
+
+            <div class="hero-treasure" id="heroChest"></div>
+
+            <h1>
+                Notre aventure<br>
+                de Noël
+            </h1>
+
+            <div class="decoration">
+                ✦ ❄ ✦
+            </div>
+
+            <p>
+                25 missions. 24 clés. Un dernier secret.
+                <br><br>
+                Une aventure imaginée pour nous,
+                malgré les kilomètres.
+            </p>
+
+        </header>
+
+
+        <!-- PROGRESSION -->
+
+        <div class="panel">
+
             <div class="progress-info">
-                <span>Ta progression</span>
-                <span>0 / 25</span>
+
+                <span>Ton aventure</span>
+
+                <span id="progressText">
+                    0 / 25 coffres
+                </span>
+
             </div>
 
             <div class="progress-bar">
-                <div class="progress-fill"></div>
+                <div class="progress-fill" id="progressFill"></div>
             </div>
+
+        </div>
+
+
+        <!-- CALENDRIER -->
+
+        <div class="section-title">
+            ✦ Les 25 coffres ✦
         </div>
 
         <div class="calendar" id="calendar"></div>
 
-        <footer>
-            <div class="heart">♥</div>
-            Créé avec amour,<br>
-            depuis l'autre bout du monde.
-        </footer>
+        <div class="footer-text">
 
-    </main>
+            Les plus belles aventures<br>
+            ne se mesurent pas en kilomètres.
 
-    <script>
-        const calendar = document.getElementById("calendar");
+            <br><br>
 
-        for (let day = 1; day <= 25; day++) {
+            ✦
 
-            const button = document.createElement("button");
+        </div>
 
-            button.className = "day";
+    </section>
 
-            if (day === 1) {
-                button.classList.add("available");
-            }
 
-            if (day === 25) {
-                button.classList.add("christmas");
-            }
+    <!-- PAGE INVENTAIRE -->
 
-            let symbol = "🔒";
+    <section class="screen" id="inventory">
 
-            if (day === 1) {
-                symbol = "▶";
-            }
+        <header class="hero">
 
-            if (day === 25) {
-                symbol = "🎁";
-            }
+            <div class="chapter">
+                Ta collection
+            </div>
 
-            button.innerHTML =
-                day + '<span class="symbol">' + symbol + '</span>';
+            <div style="font-size:70px;margin-top:25px">
+                🔑
+            </div>
 
-            button.addEventListener("click", function () {
+            <h1>L'inventaire</h1>
 
-                if (day === 1) {
-                    alert("Bienvenue dans notre aventure ! Ta première mission arrive bientôt. ❤️");
-                } else {
-                    alert("Patience... Cette mission est encore verrouillée !");
+            <p>
+                Chaque mission accomplie
+                te rapproche du dernier trésor.
+            </p>
+
+        </header>
+
+        <div class="panel">
+
+            <div class="progress-info">
+
+                <span>Clés collectées</span>
+
+                <span id="inventoryCount">
+                    0 / 24
+                </span>
+
+            </div>
+
+            <div class="collection" id="collection"></div>
+
+        </div>
+
+    </section>
+
+
+    <!-- PAGE RECOMPENSES -->
+
+    <section class="screen" id="rewards">
+
+        <header class="hero">
+
+            <div class="chapter">
+                Les trésors de décembre
+            </div>
+
+            <div style="font-size:70px;margin-top:25px">
+                🏆
+            </div>
+
+            <h1>Tes récompenses</h1>
+
+            <p>
+                Collectionne les trophées
+                tout au long de ton aventure.
+            </p>
+
+        </header>
+
+        <div class="panel" id="rewardList"></div>
+
+    </section>
+
+</main>
+
+
+<!-- MENU INFERIEUR -->
+
+<nav class="navigation">
+
+    <button class="nav-button active"
+            onclick="showScreen('adventure', this)">
+
+        <span>🧭</span>
+        Aventure
+
+    </button>
+
+    <button class="nav-button"
+            onclick="showScreen('inventory', this)">
+
+        <span>🔑</span>
+        Inventaire
+
+    </button>
+
+    <button class="nav-button"
+            onclick="showScreen('rewards', this)">
+
+        <span>🏆</span>
+        Récompenses
+
+    </button>
+
+</nav>
+
+
+<!-- FENETRE DES JEUX -->
+
+<div class="overlay" id="overlay">
+
+    <div class="modal"
+         role="dialog"
+         aria-modal="true"
+         aria-label="Mission de Noël">
+
+        <button class="close"
+                aria-label="Fermer"
+                onclick="closeModal()">
+
+            ×
+
+        </button>
+
+        <div id="modalContent"></div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+
+// =========================
+// MODE TEST
+// =========================
+
+const testMode =
+    new URLSearchParams(location.search)
+    .get("test") === "1";
+
+const storageKey = testMode
+    ? "noel2026-test"
+    : "noel2026-progression";
+
+let completed = [];
+
+try {
+
+    const saved = JSON.parse(
+        localStorage.getItem(storageKey) || "[]"
+    );
+
+    if (Array.isArray(saved)) {
+
+        completed = [...new Set(
+            saved.filter(
+                n => Number.isInteger(n)
+                && n >= 1
+                && n <= 25
+            )
+        )];
+
+    }
+
+} catch (error) {
+
+    completed = [];
+
+}
+
+if (testMode) {
+
+    document.getElementById("testBanner").innerHTML = `
+        <div class="test-banner">
+            MODE TEST — Tous les coffres sont accessibles
+        </div>
+    `;
+
+}
+
+
+// =========================
+// ANIMATION DE NEIGE
+// =========================
+
+const snow = document.getElementById("snow");
+
+for (let i = 0; i < 45; i++) {
+
+    const flake = document.createElement("span");
+
+    flake.className = "snowflake";
+
+    flake.textContent =
+        ["❄", "✦", "•"][i % 3];
+
+    flake.style.left =
+        Math.random() * 100 + "%";
+
+    flake.style.fontSize =
+        6 + Math.random() * 12 + "px";
+
+    flake.style.opacity =
+        0.3 + Math.random() * 0.6;
+
+    flake.style.animationDuration =
+        8 + Math.random() * 15 + "s";
+
+    flake.style.animationDelay =
+        -Math.random() * 20 + "s";
+
+    snow.appendChild(flake);
+
+}
+
+
+// =========================
+// DESSIN DES COFFRES
+// =========================
+
+let chestCounter = 0;
+
+function chestSVG(final = false, open = false) {
+
+    const id = "chest" + (++chestCounter);
+
+    const redLight = final
+        ? "#c9434d"
+        : "#ba3443";
+
+    const redDark = final
+        ? "#751022"
+        : "#87182b";
+
+    return `
+
+    <svg viewBox="0 0 120 100"
+         width="100%"
+         xmlns="http://www.w3.org/2000/svg">
+
+        <defs>
+
+            <linearGradient id="${id}red"
+                            x1="0" y1="0"
+                            x2="1" y2="1">
+
+                <stop offset="0%"
+                      stop-color="${redLight}"/>
+
+                <stop offset="100%"
+                      stop-color="${redDark}"/>
+
+            </linearGradient>
+
+            <linearGradient id="${id}gold"
+                            x1="0" y1="0"
+                            x2="1" y2="1">
+
+                <stop offset="0%"
+                      stop-color="#fff0be"/>
+
+                <stop offset="50%"
+                      stop-color="#bd9149"/>
+
+                <stop offset="100%"
+                      stop-color="#e7c98d"/>
+
+            </linearGradient>
+
+        </defs>
+
+        <ellipse cx="60"
+                 cy="91"
+                 rx="48"
+                 ry="6"
+                 fill="#390810"
+                 opacity=".2"/>
+
+        <rect x="12"
+              y="42"
+              width="96"
+              height="43"
+              rx="5"
+              fill="url(#${id}red)"
+              stroke="#c4a36b"
+              stroke-width="2"/>
+
+        ${open ? `
+
+            <path d="M12 35 L23 5 H97 L108 35 Z"
+                  fill="url(#${id}red)"
+                  stroke="#c4a36b"
+                  stroke-width="2"/>
+
+            <ellipse cx="60"
+                     cy="42"
+                     rx="44"
+                     ry="8"
+                     fill="#f2d484"/>
+
+        ` : `
+
+            <path d="M12 42 V26
+                     Q12 8 32 8
+                     H88
+                     Q108 8 108 26
+                     V42 Z"
+
+                  fill="url(#${id}red)"
+                  stroke="#c4a36b"
+                  stroke-width="2"/>
+
+        `}
+
+        <path d="M29 12 V85 M91 12 V85"
+              stroke="url(#${id}gold)"
+              stroke-width="8"/>
+
+        <path d="M12 43 H108 M12 77 H108"
+              stroke="url(#${id}gold)"
+              stroke-width="5"/>
+
+        <rect x="50"
+              y="36"
+              width="20"
+              height="25"
+              rx="4"
+              fill="url(#${id}gold)"/>
+
+        <circle cx="60"
+                cy="44"
+                r="4"
+                fill="#674826"/>
+
+        <path d="M60 44 L56 54 H64 Z"
+              fill="#674826"/>
+
+        <circle cx="20"
+                cy="69"
+                r="2"
+                fill="#e7c98d"/>
+
+        <circle cx="100"
+                cy="69"
+                r="2"
+                fill="#e7c98d"/>
+
+    </svg>
+
+    `;
+
+}
+
+document.getElementById("heroChest").innerHTML =
+    chestSVG(true);
+
+
+// =========================
+// DATE FRANCAISE
+// =========================
+
+function frenchDate() {
+
+    const parts = new Intl.DateTimeFormat("en-CA", {
+
+        timeZone: "Europe/Paris",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+
+    }).formatToParts(new Date());
+
+    const value = type =>
+        parts.find(p => p.type === type).value;
+
+    return `${value("year")}-${value("month")}-${value("day")}`;
+
+}
+
+function available(day) {
+
+    if (testMode) return true;
+
+    const unlockDate =
+        `2026-12-${String(day).padStart(2, "0")}`;
+
+    return frenchDate() >= unlockDate;
+
+}
+
+
+// =========================
+// AFFICHAGE DU CALENDRIER
+// =========================
+
+function renderCalendar() {
+
+    const calendar = document.getElementById("calendar");
+
+    calendar.innerHTML = "";
+
+    for (let day = 1; day <= 25; day++) {
+
+        const done = completed.includes(day);
+
+        const unlocked = available(day);
+
+        const button = document.createElement("button");
+
+        button.className = "day";
+
+        if (day === 25) {
+            button.classList.add("final");
+        }
+
+        if (done) {
+            button.classList.add("completed");
+        } else if (unlocked) {
+            button.classList.add("available");
+        } else {
+            button.classList.add("locked");
+        }
+
+        button.setAttribute(
+            "aria-label",
+            `Coffre du ${day} décembre`
+        );
+
+        button.innerHTML = `
+
+            <div class="chest">
+                ${chestSVG(day === 25, done)}
+            </div>
+
+            <div class="day-number">
+                ${String(day).padStart(2, "0")}
+            </div>
+
+            <div class="day-status">
+                ${done ? "✓" : unlocked ? "✦" : "🔒"}
+            </div>
+
+        `;
+
+        button.onclick = () => openDay(day);
+
+        calendar.appendChild(button);
+
+    }
+
+}
+
+
+// =========================
+// OUVERTURE DES MISSIONS
+// =========================
+
+function openDay(day) {
+
+
+    // COFFRE VERROUILLE
+
+    if (!available(day)) {
+
+        showModal(`
+
+            <div class="chapter">
+                Coffre verrouillé
+            </div>
+
+            <div style="width:140px;margin:25px auto">
+                ${chestSVG(day === 25)}
+            </div>
+
+            <h2>Encore un peu de patience...</h2>
+
+            <p>
+                Ce coffre s'ouvrira
+                le ${day} décembre.
+            </p>
+
+            <button class="gold-button"
+                    onclick="closeModal()">
+
+                Retour à l'aventure
+
+            </button>
+
+        `);
+
+        return;
+
+    }
+
+
+    // COFFRE DEJA TERMINE
+
+    if (completed.includes(day)) {
+
+        showModal(`
+
+            <div class="chapter">
+                Mission accomplie
+            </div>
+
+            <div style="width:140px;margin:25px auto">
+                ${chestSVG(day === 25, true)}
+            </div>
+
+            <h2>Ce coffre est déjà ouvert.</h2>
+
+            <p>
+                Ta récompense est enregistrée
+                dans ton inventaire.
+            </p>
+
+            <button class="gold-button"
+                    onclick="closeModal()">
+
+                Continuer
+
+            </button>
+
+        `);
+
+        return;
+
+    }
+
+
+    // MISSION DU JOUR 1
+
+    if (day === 1) {
+
+        showModal(`
+
+            <div class="chapter">
+                Mission 01
+            </div>
+
+            <div style="font-size:55px;margin-top:20px">
+                🔐
+            </div>
+
+            <h2>Le code secret</h2>
+
+            <p>
+                Pour ouvrir ton premier coffre,
+                retrouve le code à quatre chiffres.
+            </p>
+
+            <p>
+                Indice : l'année de cette aventure.
+            </p>
+
+            <input class="answer"
+                   id="secretCode"
+                   inputmode="numeric"
+                   maxlength="4"
+                   placeholder="0000"
+                   aria-label="Code secret">
+
+            <button class="gold-button"
+                    onclick="checkCode()">
+
+                Déverrouiller le coffre
+
+            </button>
+
+            <div class="feedback" id="feedback"></div>
+
+        `);
+
+        return;
+
+    }
+
+
+    // COFFRE FINAL
+
+    if (day === 25) {
+
+        const keys = completed.filter(
+            n => n <= 24
+        ).length;
+
+        showModal(`
+
+            <div class="chapter">
+                Le trésor de Noël
+            </div>
+
+            <div style="width:160px;margin:25px auto">
+                ${chestSVG(true)}
+            </div>
+
+            <h2>Le dernier secret</h2>
+
+            <p>
+                Tu as collecté ${keys} clés sur 24.
+            </p>
+
+            <p>
+
+                ${keys < 24
+
+                    ? "Termine les missions précédentes pour réunir toutes les clés."
+
+                    : "Toutes les clés sont réunies ! Le cadeau final reste à intégrer."
+
                 }
 
-            });
+            </p>
 
-            calendar.appendChild(button);
+            <button class="gold-button"
+                    onclick="closeModal()">
+
+                Retour à l'aventure
+
+            </button>
+
+        `);
+
+        return;
+
+    }
+
+
+    // AUTRES MISSIONS A CREER
+
+    showModal(`
+
+        <div class="chapter">
+            Mission ${String(day).padStart(2, "0")}
+        </div>
+
+        <div style="width:140px;margin:25px auto">
+            ${chestSVG()}
+        </div>
+
+        <h2>Un nouveau secret</h2>
+
+        <p>
+            Cette mission est encore
+            en cours de création.
+        </p>
+
+        <button class="gold-button"
+                onclick="closeModal()">
+
+            Retour
+
+        </button>
+
+    `);
+
+}
+
+
+// =========================
+// JEU DU CODE SECRET
+// =========================
+
+function checkCode() {
+
+    const code =
+        document.getElementById("secretCode")
+        .value.trim();
+
+    if (code === "2026") {
+
+        completeDay(1);
+
+    } else {
+
+        document.getElementById("feedback")
+        .textContent =
+            "Ce n'est pas le bon code. Réessaie !";
+
+    }
+
+}
+
+
+// =========================
+// VALIDATION D'UNE MISSION
+// =========================
+
+function completeDay(day) {
+
+    if (!available(day)) return;
+
+    if (!completed.includes(day)) {
+
+        completed.push(day);
+
+        try {
+
+            localStorage.setItem(
+                storageKey,
+                JSON.stringify(completed)
+            );
+
+        } catch (error) {
+
+            alert(
+                "La sauvegarde est indisponible dans ce navigateur."
+            );
+
         }
-    </script>
+
+    }
+
+    updateProgress();
+
+    showModal(`
+
+        <div class="chapter">
+            Mission réussie
+        </div>
+
+        <div style="width:160px;margin:25px auto">
+            ${chestSVG(day === 25, true)}
+        </div>
+
+        <h2>Coffre déverrouillé !</h2>
+
+        <p>
+
+            ${day === 25
+
+                ? "Tu as terminé ton aventure de Noël."
+
+                : `Tu viens de récupérer la clé numéro ${day}.`
+
+            }
+
+        </p>
+
+        <div style="font-size:50px">
+            ${day === 25 ? "🎁" : "🔑"}
+        </div>
+
+        <button class="gold-button"
+                onclick="closeModal()">
+
+            Continuer l'aventure
+
+        </button>
+
+    `);
+
+}
+
+
+// =========================
+// PROGRESSION
+// =========================
+
+function updateProgress() {
+
+    const keys = completed.filter(
+        day => day <= 24
+    ).length;
+
+    document.getElementById("keyCount")
+        .textContent = keys;
+
+    document.getElementById("progressText")
+        .textContent =
+            completed.length + " / 25 coffres";
+
+    document.getElementById("progressFill")
+        .style.width =
+            (completed.length / 25 * 100) + "%";
+
+    document.getElementById("inventoryCount")
+        .textContent =
+            keys + " / 24";
+
+    renderInventory();
+
+    renderRewards();
+
+    renderCalendar();
+
+}
+
+
+// =========================
+// INVENTAIRE DES CLES
+// =========================
+
+function renderInventory() {
+
+    const collection =
+        document.getElementById("collection");
+
+    collection.innerHTML = "";
+
+    for (let day = 1; day <= 24; day++) {
+
+        const earned = completed.includes(day);
+
+        collection.innerHTML += `
+
+            <div class="collectible ${earned ? "earned" : ""}">
+
+                <span>
+                    ${earned ? "🔑" : "🔒"}
+                </span>
+
+                <small>
+                    Clé ${String(day).padStart(2, "0")}
+                </small>
+
+            </div>
+
+        `;
+
+    }
+
+}
+
+
+// =========================
+// TROPHEES ET RECOMPENSES
+// =========================
+
+function renderRewards() {
+
+    const rewards = [
+
+        [1, "Le début de l'aventure", "⭐"],
+
+        [5, "Apprentie aventurière", "🧭"],
+
+        [10, "Chasseuse de trésors", "💎"],
+
+        [15, "Exploratrice confirmée", "🏅"],
+
+        [20, "Gardienne des secrets", "👑"],
+
+        [24, "Maîtresse des clés", "🔑"],
+
+        [25, "Le trésor de Noël", "🏆"]
+
+    ];
+
+    document.getElementById("rewardList")
+        .innerHTML = rewards.map(
+
+            ([count, title, icon]) => {
+
+                const earned =
+                    completed.length >= count;
+
+                return `
+
+                    <div class="reward ${earned ? "" : "locked"}">
+
+                        <div class="reward-icon">
+
+                            ${earned ? icon : "🔒"}
+
+                        </div>
+
+                        <div>
+
+                            <div class="reward-title">
+                                ${title}
+                            </div>
+
+                            <small>
+
+                                ${count}
+                                mission${count > 1 ? "s" : ""}
+
+                                ${earned ? " — Obtenu !" : ""}
+
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                `;
+
+            }
+
+        ).join("");
+
+}
+
+
+// =========================
+// NAVIGATION
+// =========================
+
+function showScreen(id, button) {
+
+    document.querySelectorAll(".screen")
+        .forEach(screen => {
+
+            screen.classList.remove("active");
+
+        });
+
+    document.getElementById(id)
+        .classList.add("active");
+
+    document.querySelectorAll(".nav-button")
+        .forEach(item => {
+
+            item.classList.remove("active");
+
+        });
+
+    button.classList.add("active");
+
+    window.scrollTo(0, 0);
+
+}
+
+
+// =========================
+// OUVERTURE DES FENETRES
+// =========================
+
+function showModal(content) {
+
+    document.getElementById("modalContent")
+        .innerHTML = content;
+
+    document.getElementById("overlay")
+        .classList.add("visible");
+
+}
+
+function closeModal() {
+
+    document.getElementById("overlay")
+        .classList.remove("visible");
+
+}
+
+document.getElementById("overlay")
+    .addEventListener("click", event => {
+
+        if (event.target.id === "overlay") {
+
+            closeModal();
+
+        }
+
+    });
+
+document.addEventListener("keydown", event => {
+
+    if (event.key === "Escape") {
+
+        closeModal();
+
+    }
+
+});
+
+
+// =========================
+// DEMARRAGE DU JEU
+// =========================
+
+updateProgress();
+
+setInterval(renderCalendar, 30000);
+
+
+</script>
 
 </body>
+
 </html>
