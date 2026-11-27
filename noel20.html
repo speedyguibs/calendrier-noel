@@ -771,14 +771,14 @@
     const good = /^(le )?(lac (de )?)?(l ?)?ospedale( en corse| corse)?$/.test(normalized);
     if(good){
       addLog(`${player.name} a trouvé la bonne réponse : ${guess}.`);
-      state.finished = true;state.revealedTiles=Array.from({length:20},(_,i)=>i);
+      state.history.push({manche:'Étoile mystérieuse',question:'Quel est le lieu ?',reponses:[{pseudo:player.name,reponse:guess,correct:true}],solution:'Lac de l’Ospédale'});state.finished = true;state.revealedTiles=Array.from({length:20},(_,i)=>i);
       state.phase = "end";
       if(hostMode && window.opener){window.opener.postMessage({type:'noel20-complete',result:{winner:getParticipant(state.winnerId)?.name,star:guess,history:state.history}},location.origin);}
       syncState();
       broadcast({type:'end', title:'Bravo !', text:`La bonne réponse était bien : le lac de l'Ospédale, en Corse. ${player.name} a trouvé l’étoile mystérieuse !`});
       showEnding('Bravo !', `La bonne réponse était bien : le lac de l'Ospédale, en Corse. ${player.name} a trouvé l’étoile mystérieuse !`);
     } else {
-      addLog(`${player.name} a proposé : ${guess} — ce n’est pas la bonne réponse.`);
+      state.history.push({manche:'Étoile mystérieuse',question:'Quel est le lieu ?',reponses:[{pseudo:player.name,reponse:guess,correct:false}],solution:'À découvrir'});addLog(`${player.name} a proposé : ${guess} — ce n’est pas la bonne réponse.`);
       syncState();
       if(playerId===myId){
         const fb = $('guessFeedback');
@@ -792,9 +792,10 @@
   function showEnding(title, text){
     showScreen('end');
     $('endTitle').textContent = title;
-    $('endText').textContent = text;
+    $('endText').textContent = text; renderHistory70();
   }
 
+  function renderHistory70(){let el=document.getElementById('history70');if(!el){el=document.createElement('div');el.id='history70';el.style.cssText='width:100%;text-align:left';$('endScreen').appendChild(el)}el.replaceChildren();const h=document.createElement('h2');h.textContent='Toutes les réponses';el.append(h);for(const x of state.history||[]){const d=document.createElement('details');d.className='card';d.style.margin='10px 0';const t=document.createElement('summary');t.textContent=x.manche+' — '+x.question;d.append(t);const a=document.createElement('p');a.textContent='Solution : '+x.solution;d.append(a);for(const r of x.reponses||[]){const l=document.createElement('p');l.textContent=(r.correct?'✓ ':'✗ ')+r.pseudo+' : '+r.reponse;d.append(l)}el.append(d)}}
   function selectChoice(idx){
     if(localAnswerLocked || !state.currentQuestion || !isCurrentPlayerActive()) return;
     selectedChoice = idx;
