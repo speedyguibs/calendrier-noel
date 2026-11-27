@@ -217,7 +217,7 @@
             <div class="notice">Dernière étape : retrouve le lieu où cette photo a été prise.</div>
             <input id="guessInput" type="text" placeholder="Nom du lieu" />
             <div class="row">
-              <button id="guessBtn" class="btn">Proposer ma réponse</button>
+              <button id="guessBtn" class="btn">Proposer ma réponse</button><button id="bonus69" class="btn secondary hidden">Question bonus</button>
             </div>
             <div id="guessFeedback" class="feedback hidden"></div>
           </div>
@@ -292,7 +292,7 @@
       {cat:'Duel', q:'Quel océan borde la côte ouest de l’Afrique ?', choices:['Atlantique','Pacifique','Arctique','Indien seulement'], answer:0, exp:'La côte ouest africaine donne sur l’océan Atlantique.'}
     ],
     maitre: [
-      {cat:'Coup de maître', q:'Quelle chaîne de montagnes traverse notamment la Corse ?', choices:['Les Alpes','Les Pyrénées','Le Massif Armoricain','Les Vosges'], answer:0, exp:'La Corse est parfois dite "montagne dans la mer", avec un relief rattaché à l’ensemble alpin.'},
+      {cat:'Géographie',q:'Quel fleuve traverse Budapest ?',choices:['Le Rhin','Le Danube','La Vistule'],answer:1,exp:'Le Danube traverse Budapest.'},
       {cat:'Coup de maître', q:'Combien de jours compte une année bissextile ?', choices:['364','365','366','367'], answer:2, exp:'Une année bissextile compte 366 jours.'},
       {cat:'Coup de maître', q:'Quel fruit donne le jus utilisé pour faire la grenadine traditionnelle ?', choices:['Raisin','Grenade','Fraise','Cerise'], answer:1, exp:'La grenadine tire son nom de la grenade.'},
       {cat:'Coup de maître', q:'Quel pays a pour capitale Lisbonne ?', choices:['Espagne','Portugal','Italie','Grèce'], answer:1, exp:'Lisbonne est la capitale du Portugal.'},
@@ -458,13 +458,13 @@
     const q = state.currentQuestion;
     const round = currentRound();
     $('phaseKicker').textContent = q ? q.cat : 'Manche';
-    $('phaseName').textContent = round ? round.label : 'Partie terminée';
+    $('phaseName').textContent = state.stageName || 'Partie terminée';
 
     let questionNumber = 0;
-    for(let i=0;i<state.roundIndex;i++) questionNumber += ROUND_PLAN[i].total;
+    for(let i=0;i<Math.min(state.roundIndex,ROUND_PLAN.length);i++) questionNumber += ROUND_PLAN[i].total;
     questionNumber += Number(q?.uid?.split(":")[1] ?? currentQuestionIndex) + 1;
     const totalQuestions = ROUND_PLAN.reduce((sum,r)=>sum+r.total,0);
-    $('questionCount').textContent = q ? `Question ${questionNumber} / ${totalQuestions}` : 'Fin';
+    $('questionCount').textContent = q ? 'Question '+q.uid.split(':')[1] : 'Fin';
     $('progressFill').style.width = q ? `${Math.min(100, (questionNumber-1)/totalQuestions*100)}%` : '100%';
 
     if(!q){
@@ -475,9 +475,7 @@
     }
 
     $('questionText').textContent = q.q;
-    $('questionHelp').textContent = activeParticipants().length > 1
-      ? 'Réponds avant les autres, puis attends la validation de tout le monde.'
-      : 'Le coup de maître final : chaque bonne réponse te rapproche de la découverte.';
+    $('questionHelp').textContent = 'À jouer : '+state.eligible.map(id=>getParticipant(id)?.name).join(', ')+(q.intrus?' — choisis une bonne proposition, pas l’intrus.':'');
 
     const wrap = $('choices');
     wrap.innerHTML='';
@@ -489,9 +487,9 @@
       div.onclick=() => selectChoice(idx);
       if(selectedChoice===idx) div.classList.add('selected');
       if(localAnswerLocked){
-        if(q.resolved && idx===q.answer) div.classList.add('correct');
+        if(q.resolved && (q.intrus?idx!==q.answer:idx===q.answer)) div.classList.add('correct');
         const mine = state.pendingAnswers[myId];
-        if(q.resolved && mine === idx && mine !== q.answer) div.classList.add('wrong');
+        if(q.resolved && mine === idx && (q.intrus?mine===q.answer:mine!==q.answer)) div.classList.add('wrong');
       }
       wrap.appendChild(div);
     });
@@ -501,7 +499,7 @@
   function renderGuessBlock(){
     const shouldShow = !!state.guessOpen;
     $('guessSection').classList.toggle('hidden', !shouldShow);
-    if(!shouldShow) return;
+    $('bonus69').classList.toggle('hidden',!hostMode||!shouldShow);if(!shouldShow) return;
     const winner = getParticipant(state.winnerId);
     $('winnerText').textContent = winner ? `${winner.name} remporte la partie !` : 'Fin de la partie';
   }
@@ -512,9 +510,8 @@
     renderPlayersScores();
     renderLog();
     renderQuestion();
-    renderGuessBlock();
-    $('hostControls').classList.toggle('hidden', !hostMode);
-    $('nextBtn').disabled = !hostMode || !state.currentQuestion || !everyoneAnswered();
+    renderGuessBlock();$('answerRow').classList.toggle('hidden',!state.currentQuestion||!state.eligible.includes(myId));$('hostControls').classList.toggle('hidden', !hostMode);
+    $('nextBtn').disabled = !hostMode || !state.currentQuestion || !state.currentQuestion.resolved;
     $('waitBox').classList.toggle('hidden', !(localAnswerLocked && state.currentQuestion && !state.currentQuestion.resolved));
     $('connectionState').textContent = hostMode ? 'Hôte connecté' : (connToHost && connToHost.open ? 'Connecté à l’hôte' : 'Connexion…');
   }
@@ -541,7 +538,7 @@
 
   function syncState(){
     const snapshot = JSON.parse(JSON.stringify(state));
-    if(snapshot.currentQuestion && !snapshot.currentQuestion.resolved){delete snapshot.currentQuestion.answer;delete snapshot.currentQuestion.exp;}
+    if(snapshot.currentQuestion && !snapshot.currentQuestion.resolved){delete snapshot.currentQuestion.answer;delete snapshot.currentQuestion.exp; snapshot.pendingAnswers=Object.fromEntries(Object.keys(snapshot.pendingAnswers).map(id=>[id,-1]));}
     broadcast({type:'state', state:snapshot});
     renderAll();
   }
@@ -575,7 +572,7 @@
         const idx = state.participants.findIndex(p => p.id===conn.peer);
         if(idx>=0){
           addLog(`${state.participants[idx].name} a quitté la salle.`);
-          state.participants.splice(idx,1);
+          if(state.phase==='lobby')state.participants.splice(idx,1);else {state.participants[idx].disconnected=true;}
           delete hostConnections[conn.peer];
           syncState();
         }
@@ -598,12 +595,12 @@
       syncState();
     }
     if(data.type==='answer'){
-      if(!state.currentQuestion || state.currentQuestion.resolved || !getParticipant(conn.peer)?.active || state.pendingAnswers[conn.peer] !== undefined || !Number.isInteger(data.choice) || data.choice<0 || data.choice>=state.currentQuestion.choices.length) return;
+      if(!state.currentQuestion || data.uid!==state.currentQuestion.uid || state.currentQuestion.resolved || !state.eligible.includes(conn.peer) || state.pendingAnswers[conn.peer] !== undefined || !Number.isInteger(data.choice) || data.choice<0 || data.choice>=state.currentQuestion.choices.length) return;
       state.pendingAnswers[conn.peer] = data.choice;
       syncState();
       if(everyoneAnswered()) evaluateQuestion();
     }
-    if(data.type==='guess'){ handleGuess(data.playerId, data.guess); }
+    if(data.type==='guess'){ handleGuess(conn.peer, data.guess); }
   }
 
   function joinLobby(name, avatar, code){
@@ -768,15 +765,15 @@
     const winner = state.winnerId;
     const player = getParticipant(playerId);
     if(!player) return;
-    guess=String(guess).replace(/[<>&"']/g,"").slice(0,100);
+    guess=String(guess).replace(/[<>&"]/g,"").slice(0,100);
     if(!state.guessOpen || state.finished) return;
     const normalized = normalize(guess);
-    const good = normalized.includes('ospedale') && (normalized.includes('lac') || normalized.includes("l ospedale") || normalized.includes("de l ospedale"));
+    const good = /^(le )?(lac (de )?)?(l ?)?ospedale( en corse| corse)?$/.test(normalized);
     if(good){
       addLog(`${player.name} a trouvé la bonne réponse : ${guess}.`);
-      state.finished = true;
+      state.finished = true;state.revealedTiles=Array.from({length:20},(_,i)=>i);
       state.phase = "end";
-      if(hostMode && window.opener){window.opener.postMessage({type:"noel20-complete"},location.origin);}
+      if(hostMode && window.opener){window.opener.postMessage({type:'noel20-complete',result:{winner:getParticipant(state.winnerId)?.name,star:guess,history:state.history}},location.origin);}
       syncState();
       broadcast({type:'end', title:'Bravo !', text:`La bonne réponse était bien : le lac de l'Ospédale, en Corse. ${player.name} a trouvé l’étoile mystérieuse !`});
       showEnding('Bravo !', `La bonne réponse était bien : le lac de l'Ospédale, en Corse. ${player.name} a trouvé l’étoile mystérieuse !`);
@@ -805,14 +802,14 @@
   }
 
   function sendAnswer(){
-    if(selectedChoice===null || localAnswerLocked || !state.currentQuestion) return;
+    if(selectedChoice===null || localAnswerLocked || !state.currentQuestion || !isCurrentPlayerActive()) return;
     localAnswerLocked = true;
     if(hostMode){
       state.pendingAnswers[myId] = selectedChoice;
       syncState();
       if(everyoneAnswered()) evaluateQuestion();
     } else if(connToHost && connToHost.open){
-      connToHost.send({type:'answer', playerId:myId, choice:selectedChoice});
+      connToHost.send({type:'answer', playerId:myId, uid:state.currentQuestion.uid, choice:selectedChoice});
     }
     renderGame();
   }
@@ -845,6 +842,121 @@
     fileToDataUrl(file, cb);
   }
 
+
+const bank69=[
+['Football','Quel club a remporté la Ligue des champions en 2004 ?','FC Porto','AS Monaco','AC Milan','Real Madrid'],
+['Cinéma','Qui a réalisé Interstellar ?','Christopher Nolan','Steven Spielberg','James Cameron','Ridley Scott'],
+['Géographie','Quelle est la capitale du Canada ?','Ottawa','Toronto','Montréal','Vancouver'],
+['Cuisine','De quel pays vient le tiramisu ?','Italie','Espagne','Portugal','Grèce'],
+['Musique','Quel groupe a chanté Dancing Queen ?','ABBA','Queen','The Beatles','Bee Gees'],
+['Football','Quel pays a remporté l’Euro 2004 ?','Grèce','Portugal','France','Italie'],
+['Sciences','Quel élément a pour symbole Fe ?','Fer','Fluor','Francium','Phosphore'],
+['Géographie','Quel détroit sépare l’Europe de l’Afrique près du Maroc ?','Gibraltar','Béring','Bosphore','Ormuz'],
+['Cinéma','Dans quel film apparaît le personnage de Jack Sparrow ?','Pirates des Caraïbes','Avatar','Gladiator','Le Hobbit'],
+['Cuisine','Quel fromage entre traditionnellement dans le tzatziki ?','Aucun','Feta','Parmesan','Gouda'],
+['Histoire','En quelle année le mur de Berlin est-il tombé ?','1989','1991','1987','1993'],
+['Football','Qui a remporté le Ballon d’Or 2006 ?','Fabio Cannavaro','Zinédine Zidane','Thierry Henry','Ronaldinho'],
+['Nature','Combien de cœurs possède une pieuvre ?','Trois','Deux','Quatre','Un'],
+['Musique','Quel groupe a sorti The Final Countdown ?','Europe','Queen','Scorpions','AC/DC'],
+['Géographie','Quelle mer borde la Bulgarie ?','Mer Noire','Mer Rouge','Mer Baltique','Mer Adriatique'],
+['Sport','Combien de points vaut un essai au rugby à XV ?','5','3','6','7'],
+['Cuisine','Quel ingrédient principal compose le houmous ?','Pois chiches','Lentilles','Haricots rouges','Petits pois'],
+['Cinéma','Quel acteur incarne Maximus dans Gladiator ?','Russell Crowe','Brad Pitt','Tom Cruise','Joaquin Phoenix'],
+['Culture','Quel peintre a réalisé Guernica ?','Pablo Picasso','Salvador Dalí','Claude Monet','Vincent van Gogh'],
+['Football','Quel pays a gagné la Coupe du monde 2010 ?','Espagne','Pays-Bas','Allemagne','Brésil'],
+['Géographie','Dans quel pays se trouve Dubrovnik ?','Croatie','Monténégro','Grèce','Albanie'],
+['Sciences','Quelle planète possède la Grande Tache rouge ?','Jupiter','Mars','Saturne','Neptune'],
+['Musique','Quel artiste a publié Thriller en 1982 ?','Michael Jackson','Prince','Madonna','George Michael'],
+['Cuisine','Quel est le principal ingrédient du pesto genovese ?','Basilic','Persil','Menthe','Coriandre'],
+['Football','Quel club a remporté la C1 en 1993 ?','Olympique de Marseille','AC Milan','Ajax','FC Barcelone'],
+['Histoire','Qui était le premier humain à marcher sur la Lune ?','Neil Armstrong','Buzz Aldrin','Youri Gagarine','Michael Collins'],
+['Géographie','Quelle est la capitale de la Nouvelle-Zélande ?','Wellington','Auckland','Christchurch','Dunedin'],
+['Cinéma','Quel film met en scène John Coffey ?','La Ligne verte','Les Évadés','Forrest Gump','Seul au monde'],
+['Culture','Combien de cases comporte un échiquier ?','64','81','100','49'],
+['Football','Quel pays a accueilli le Mondial 2006 ?','Allemagne','France','Italie','Espagne'],
+['Nature','Quel mammifère pond des œufs ?','Ornithorynque','Dauphin','Koala','Paresseux'],
+['Cuisine','Quel alcool entre dans un mojito classique ?','Rhum','Gin','Vodka','Tequila'],
+['Géographie','Quelle est la capitale du Maroc ?','Rabat','Casablanca','Marrakech','Fès'],
+['Musique','Quel duo français a sorti Get Lucky ?','Daft Punk','Justice','Air','Cassius'],
+['Football','Quel gardien a remporté le Ballon d’Or 1963 ?','Lev Yachine','Dino Zoff','Gianluigi Buffon','Iker Casillas'],
+['Sciences','Quel gaz représente la plus grande part de l’air terrestre ?','Azote','Oxygène','Argon','Dioxyde de carbone'],
+['Culture','Quel est le nom du capitaine dans Vingt mille lieues sous les mers ?','Nemo','Haddock','Achab','Hook'],
+['Sport','Sur quelle surface joue-t-on Roland-Garros ?','Terre battue','Gazon','Dur','Moquette'],
+['Histoire','En quelle année a eu lieu la prise de la Bastille ?','1789','1792','1776','1815'],
+['Géographie','Quel pays possède la ville de Porto ?','Portugal','Espagne','Italie','Brésil'],
+['Football','Quel pays a remporté la première Coupe du monde en 1930 ?','Uruguay','Argentine','Brésil','Italie'],
+['Cinéma','Dans quelle saga trouve-t-on le personnage de Katniss Everdeen ?','Hunger Games','Divergente','Twilight','Harry Potter'],
+['Cuisine','Quelle épice colore traditionnellement la paella ?','Safran','Cannelle','Cumin','Vanille'],
+['Sciences','Quelle est la plus grande planète du Système solaire ?','Jupiter','Saturne','Neptune','Uranus'],
+['Culture','Quel auteur a écrit Le Petit Prince ?','Antoine de Saint-Exupéry','Jules Verne','Victor Hugo','Albert Camus'],
+['Football','Quel club a gagné la C1 en 2012 ?','Chelsea','Bayern Munich','Real Madrid','FC Barcelone'],
+['Géographie','Quel pays est traversé par le fleuve Pô ?','Italie','France','Autriche','Espagne'],
+['Musique','Quel chanteur était surnommé le King ?','Elvis Presley','Frank Sinatra','Johnny Hallyday','David Bowie'],
+['Nature','Quel est le plus grand animal terrestre vivant ?','Éléphant d’Afrique','Rhinocéros blanc','Hippopotame','Girafe'],
+['Cinéma','Qui a réalisé Titanic (1997) ?','James Cameron','Peter Jackson','Steven Spielberg','Martin Scorsese'],
+['Football','Quel pays a remporté le Mondial féminin 2019 ?','États-Unis','Pays-Bas','Allemagne','Suède'],
+['Culture','Combien de joueurs participent à une partie classique de belote ?','4','2','3','6'],
+['Géographie','Quel pays a pour capitale Ljubljana ?','Slovénie','Slovaquie','Croatie','Serbie'],
+['Sciences','Quel organe produit l’insuline ?','Pancréas','Foie','Rein','Estomac'],
+['Cuisine','De quel pays vient le kimchi ?','Corée','Japon','Thaïlande','Inde'],
+['Football','Quel pays a gagné l’Euro 1992 ?','Danemark','Allemagne','Pays-Bas','Suède'],
+['Musique','Quel instrument possède généralement 88 touches ?','Piano','Accordéon','Orgue de Barbarie','Violon'],
+['Culture','Quel personnage habite au 221B Baker Street ?','Sherlock Holmes','Hercule Poirot','Arsène Lupin','James Bond'],
+['Géographie','Quelle île est la plus grande de la Méditerranée ?','Sicile','Sardaigne','Chypre','Crète'],
+['Sport','Combien de joueurs sur le terrain par équipe au handball ?','7','6','8','5'],
+['Football','Quel club anglais joue à Anfield ?','Liverpool','Everton','Manchester United','Arsenal'],
+['Histoire','Quelle civilisation a construit Machu Picchu ?','Incas','Mayas','Aztèques','Romains'],
+['Cuisine','Quelle pâte sert à préparer les profiteroles ?','Pâte à choux','Pâte feuilletée','Pâte brisée','Pâte sablée'],
+['Sciences','Quelle unité mesure la fréquence ?','Hertz','Watt','Volt','Pascal'],
+['Cinéma','Quel acteur interprète Forrest Gump ?','Tom Hanks','Matt Damon','Brad Pitt','Robin Williams'],
+['Football','Quel pays a gagné le Mondial 1998 ?','France','Brésil','Croatie','Italie'],
+['Géographie','Quel est le plus long fleuve de France métropolitaine ?','Loire','Seine','Rhône','Garonne'],
+['Musique','Quel groupe a chanté Bohemian Rhapsody ?','Queen','ABBA','U2','Oasis'],
+['Culture','Quel est le nom du chien de Tintin ?','Milou','Idéfix','Rantanplan','Snoopy'],
+['Nature','Quel oiseau ne peut pas voler ?','Autruche','Aigle','Hirondelle','Albatros'],
+['Football','Quel club est surnommé les Gunners ?','Arsenal','Chelsea','Tottenham','Manchester City'],
+['Cuisine','Quel fruit est utilisé dans la tarte Tatin classique ?','Pomme','Poire','Pêche','Abricot'],
+['Géographie','Quelle est la capitale de la Finlande ?','Helsinki','Oslo','Stockholm','Tallinn'],
+['Sciences','Quelle est la formule chimique de l’eau ?','H2O','CO2','O2','NaCl'],
+['Cinéma','Dans quel film trouve-t-on le personnage de Simba ?','Le Roi Lion','Madagascar','Le Livre de la jungle','Zootopie'],
+['Sport','Combien de sets faut-il gagner pour remporter un match masculin de Grand Chelem ?','3','2','4','5'],
+['Football','Quelle sélection a remporté l’Euro 2016 ?','Portugal','France','Allemagne','Espagne'],
+['Culture','Quel est le plus petit nombre premier ?','2','1','0','3'],
+['Géographie','Dans quel pays se trouve le Kilimandjaro ?','Tanzanie','Kenya','Éthiopie','Ouganda'],
+['Cuisine','Quel pays est à l’origine de la spécialité appelée falafel ?','Origine disputée au Moyen-Orient','Mexique','Norvège','Canada']
+];
+const intrus69=[
+['Ces pays ont remporté la Coupe du monde masculine, sauf un.',['France','Italie','Brésil','Argentine','Allemagne','Espagne','Portugal'],6],
+['Ces villes sont des capitales européennes, sauf une.',['Rome','Madrid','Athènes','Lisbonne','Oslo','Vienne','Barcelone'],6],
+['Ces ingrédients entrent dans une salade niçoise traditionnelle ou ses variantes courantes, sauf un.',['Tomate','Olive','Œuf','Anchois','Thon','Poivron','Chocolat'],6],
+['Ces clubs ont gagné la Ligue des champions avant 2020, sauf un.',['Liverpool','Chelsea','Ajax','Porto','Marseille','Inter Milan','Tottenham'],6],
+['Ces animaux sont des mammifères, sauf un.',['Dauphin','Baleine','Chauve-souris','Éléphant','Koala','Loutre','Crocodile'],6],
+['Ces artistes sont des groupes, sauf un.',['Queen','ABBA','U2','Coldplay','Oasis','Daft Punk','Adele'],6],
+['Ces pays bordent la Méditerranée, sauf un.',['Espagne','France','Italie','Grèce','Tunisie','Croatie','Portugal'],6],
+['Ces films ont été réalisés par Christopher Nolan, sauf un.',['Inception','Interstellar','Dunkerque','Memento','Tenet','Oppenheimer','Avatar'],6]
+];
+let deck69=[],cursor69=0,intrusCursor69=0,serial69=0,phaseSteps69=0,duelResume69=0,clock69=null;state.history=[];state.eligible=[];state.clocks={};state.deadline=0;state.stageName='';state.duelIds=[];state.fatalTurn='';state.roundErrors={};state.intrusUsed=[];
+function make69(row,count=4){const correct=row[2], choices=shuffle(row.slice(2,2+count));return {cat:row[0],q:row[1],choices,answer:choices.indexOf(correct),exp:'Bonne réponse : '+correct+'.'}}
+function nextBank69(count=4){if(cursor69>=deck69.length){deck69=shuffle(bank69);cursor69=0}return make69(deck69[cursor69++],count)}
+function eligible69(){return state.eligible.map(getParticipant).filter(Boolean)}
+function setQ69(q,ids){selectedChoice=null;localAnswerLocked=false;state.pendingAnswers={};state.eligible=ids;state.currentQuestion={...q,uid:state.roundIndex+':'+(++serial69),resolved:false};$('feedback').classList.add('hidden');syncState()}
+function everyoneAnswered(){return state.eligible.length>0&&state.eligible.every(id=>state.pendingAnswers[id]!==undefined)}
+function isCurrentPlayerActive(){return state.eligible.includes(myId)&&!state.currentQuestion?.resolved}
+function startGame(){if(state.participants.length!==4)return;state.phase='game';state.roundIndex=0;state.stageName='Le Coup d’envoi';state.revealedTiles=[];state.history=[];state.started=true;state.participants.forEach(p=>{p.score=0;p.active=true});deck69=shuffle(bank69);cursor69=0;intrusCursor69=0;phaseSteps69=0;serial69=0;state.roundErrors={};addLog('La partie commence !');askNextQuestion()}
+function askNextQuestion(){if(state.finished||state.guessOpen)return;const ids=activeParticipants().map(p=>p.id);if(state.duelIds.length){setQ69(nextBank69(4),state.duelIds);return}if(state.roundIndex===0){state.stageName='Le Coup d’envoi';if(phaseSteps69===2){const q=QUESTION_SET.qualif.find(q=>q.cat==='Humour familial');setQ69(q,ids)}else setQ69(nextBank69(2),ids);return}if(state.roundIndex===1){state.stageName='Le Coup par coup';const row=intrus69[intrusCursor69%intrus69.length];const choices=row[1].filter((_,i)=>!state.intrusUsed.includes(i));setQ69({cat:'Évite l’intrus',q:row[0],choices,answer:choices.indexOf(row[1][row[2]]),exp:'Intrus : '+row[1][row[2]],intrus:true},[ids[phaseSteps69%ids.length]]);return}if(state.roundIndex===2){state.stageName='Le Coup fatal';const id=state.fatalTurn;if(!id)return;setQ69(nextBank69(3),[id]);return}if(state.roundIndex===3){state.stageName='Le Coup de maître';if(phaseSteps69>=5){openGuess();return}setQ69(nextBank69(3),[state.winnerId]);return}if(state.roundIndex===4){state.stageName='Questions bonus';setQ69(nextBank69(3),ids.length?ids:state.participants.map(p=>p.id))}}
+function startDuel69(ids,resume){state.duelIds=ids;duelResume69=resume;state.stageName='Duel éliminatoire';addLog('Duel : '+ids.map(id=>getParticipant(id).name).join(' contre ')+'. Une bonne réponse face à une mauvaise élimine le perdant.');}
+function eliminate69(id){const p=getParticipant(id);if(p){p.active=false;addLog(p.name+' est éliminé(e) et devient spectateur.')}}
+function enterRound69(n){state.roundIndex=n;phaseSteps69=0;state.roundErrors={};state.intrusUsed=[];state.duelIds=[];if(n===2){const ids=activeParticipants().map(p=>p.id);state.clocks=Object.fromEntries(ids.map(id=>[id,60000]));state.fatalTurn=ids[0];state.deadline=0}if(n===3){state.deadline=0;clearInterval(clock69);clock69=null;state.winnerId=activeParticipants()[0]?.id;addLog(getParticipant(state.winnerId)?.name+' devient Maître de Noël !')}}
+function evaluateQuestion(){const q=state.currentQuestion;if(!q||q.resolved||!everyoneAnswered())return;const ps=eligible69();const good=ps.filter(p=>q.intrus?state.pendingAnswers[p.id]!==q.answer:state.pendingAnswers[p.id]===q.answer);ps.forEach(p=>{if(good.includes(p))p.score++;else state.roundErrors[p.id]=(state.roundErrors[p.id]||0)+1});q.resolved=true;state.history.push({manche:state.stageName,question:q.q,reponses:ps.map(p=>({pseudo:p.name,reponse:q.choices[state.pendingAnswers[p.id]],correct:good.includes(p)})),solution:q.choices[q.answer]});if(state.duelIds.length){if(good.length===1){eliminate69(ps.find(p=>!good.includes(p)).id);state.duelIds=[];enterRound69(duelResume69)}else addLog('Égalité au duel : nouvelle question.');}
+else if(state.roundIndex===0){phaseSteps69++;if(good.length===ps.length){revealRandomTile();addLog('Quatre bonnes réponses : une case s’ouvre !')}else addLog('Bonne réponse : '+q.choices[q.answer]);const ranked=[...ps].sort((a,b)=>(state.roundErrors[b.id]||0)-(state.roundErrors[a.id]||0)||a.score-b.score);if((state.roundErrors[ranked[0].id]||0)>=2||phaseSteps69>=8)startDuel69(ranked.slice(0,2).map(p=>p.id),1)}
+else if(state.roundIndex===1){if(good.length){const row=intrus69[intrusCursor69%intrus69.length];state.intrusUsed.push(row[1].indexOf(q.choices[state.pendingAnswers[ps[0].id]]));phaseSteps69++;if(phaseSteps69%3===0){revealRandomTile();addLog('Les trois candidats ont évité l’intrus : une case s’ouvre !');intrusCursor69++;state.intrusUsed=[];if(phaseSteps69>=12){const ranked=[...activeParticipants()].sort((a,b)=>a.score-b.score);startDuel69(ranked.slice(0,2).map(p=>p.id),2)}}}else{const loser=ps[0];const rival=activeParticipants().filter(p=>p.id!==loser.id).sort((a,b)=>a.score-b.score)[0];startDuel69([loser.id,rival.id],2)}}
+else if(state.roundIndex===2){if(state.deadline){state.clocks[state.fatalTurn]=Math.max(0,state.deadline-Date.now());state.deadline=0}if(good.length){revealRandomTile();state.fatalTurn=activeParticipants().find(p=>p.id!==state.fatalTurn)?.id;addLog('Bonne réponse : le chrono change de candidat.')}else addLog('Mauvaise réponse : le même candidat continue.');}
+else if(state.roundIndex===3){phaseSteps69++;if(good.length)revealRandomTile();addLog(good.length?'Bonne réponse du maître !':'Bonne réponse : '+q.choices[q.answer])}
+else if(state.roundIndex===4){if(good.length===ps.length)revealRandomTile();}syncState()}
+function beginClock69(){if(state.roundIndex!==2||!state.currentQuestion||state.currentQuestion.resolved||state.deadline)return;state.deadline=Date.now()+state.clocks[state.fatalTurn];syncState();if(clock69)clearInterval(clock69);clock69=setInterval(()=>{if(!state.deadline||state.roundIndex!==2)return;if(Date.now()>=state.deadline){const loser=state.fatalTurn;state.clocks[loser]=0;state.deadline=0;state.currentQuestion.resolved=true;eliminate69(loser);enterRound69(3);syncState()}},100)}
+function next69(){if(!hostMode||!state.currentQuestion?.resolved)return;if(state.roundIndex===4){openGuess();return}askNextQuestion();beginClock69()}
+function openGuess(){state.currentQuestion=null;state.eligible=[];state.guessOpen=true;state.stageName='Étoile mystérieuse';addLog('Quel est le lieu représenté ?');syncState()}
+function bonus69(){if(!hostMode||!state.guessOpen||state.finished)return;state.guessOpen=false;state.roundIndex=4;state.eligible=[];const q=nextBank69(3);state.stageName='Question bonus';setQ69(q,state.participants.map(p=>p.id))}
   $('createBtn').onclick = () => {
     const name = $('hostName').value.trim().replace(/[<>&"']/g,'');
     if(!name || !$('hostPhoto').files.length){ alert('Entre ton pseudo et prends un selfie.'); return; }
@@ -876,10 +988,8 @@
 
   $('lockBtn').onclick = sendAnswer;
 
-  $('nextBtn').onclick = () => {
-    if(!hostMode) return;
-    currentQuestionIndex += 1;
-    askNextQuestion();
+  $('bonus69').onclick=bonus69; $('nextBtn').onclick = () => {
+    next69();
   };
 
   $('guessBtn').onclick = () => {
@@ -898,6 +1008,7 @@
   const preRoom = new URL(location.href).searchParams.get('room');
   if(preRoom){ $('roomInput').value = preRoom.toUpperCase(); $('hostName').closest('.card').classList.add('hidden'); }
 
+  setInterval(()=>{if(state.roundIndex===2&&state.phase==='game'){const times=Object.entries(state.clocks).map(([id,t])=>{const left=id===state.fatalTurn&&state.deadline?Math.max(0,state.deadline-Date.now()):t;return (getParticipant(id)?.name||'')+' : '+Math.ceil(left/1000)+' s'});$('questionCount').textContent=times.join(' | ')}},150);
   // render initial tiles if landing transforms later
   initTiles();
 })();
